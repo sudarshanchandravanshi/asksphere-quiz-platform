@@ -27,13 +27,19 @@ function rateLimit({limit,windowMs}){
 const strictUuid=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 
 app.use(express.json({limit:'64kb'}));
+const quizCache=new Map();
 async function loadQuiz(id){
+ const cached=quizCache.get(id);
+ if(cached&&cached.expires>Date.now())return cached.value;
  const result=await list({prefix:'quizzes/'+id+'.json',limit:1});
  const blob=result.blobs.find(item=>item.pathname==='quizzes/'+id+'.json');
  if(!blob)return null;
  const response=await fetch(blob.url);
  if(!response.ok)throw new Error('Quiz could not be loaded');
- return await response.json();
+ const quiz=await response.json();
+ quizCache.set(id,{value:quiz,expires:Date.now()+10*60*1000});
+ if(quizCache.size>500){const first=quizCache.keys().next().value;quizCache.delete(first);}
+ return quiz;
 }
 app.post('/api/quizzes',rateLimit({limit:20,windowMs:60*60*1000}),async(req,res)=>{
  try{
@@ -57,7 +63,7 @@ app.get('/api/quizzes/:id',async(req,res)=>{
   const quiz=await loadQuiz(id);
   if(!quiz)return res.status(404).json({error:'Quiz not found'});
   const safe={...quiz,questions:quiz.questions.map(q=>quiz.type==='friendship'?{q:q.q,opts:q.opts}:{q:q.q,opts:q.opts.map(option=>({text:option.text}))})};
-  res.set('Cache-Control','no-store').json(safe);
+  res.set('Cache-Control','public, max-age=60, stale-while-revalidate=300').json(safe);
  }catch(error){console.error('Quiz load failed:',error.message);res.status(503).json({error:'Quiz is temporarily unavailable'});}
 });
 app.post('/api/quiz-result',rateLimit({limit:60,windowMs:60*60*1000}),async(req,res)=>{
@@ -91,7 +97,7 @@ app.get('/api/leaderboard',rateLimit({limit:120,windowMs:60*60*1000}),async(req,
   for(let page=0;page<5;page++){const result=await list({prefix:'scores/'+quizId+'/',limit:100,cursor});blobs.push(...result.blobs);cursor=result.cursor;if(!cursor)break;}
   const entries=await Promise.all(blobs.map(async blob=>{try{const response=await fetch(blob.url);if(!response.ok)return null;const d=await response.json();return {name:String(d.name||'Friend').slice(0,35),score:Number(d.score),total:Number(d.total),percent:Number(d.percent),createdAt:d.createdAt};}catch{return null;}}));
   const clean=entries.filter(x=>x&&Number.isFinite(x.score)&&Number.isFinite(x.total));clean.sort((a,b)=>b.score-a.score||String(a.createdAt).localeCompare(String(b.createdAt)));
-  res.set('Cache-Control','no-store').json({entries:clean.slice(0,10)});
+  res.set('Cache-Control','public, max-age=15, stale-while-revalidate=30').json({entries:clean.slice(0,10)});
  }catch(error){console.error('Leaderboard read failed:',error.message);res.status(503).json({error:'Leaderboard is temporarily unavailable'});}
 });
 const publicStaticPages={
