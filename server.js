@@ -56,7 +56,7 @@ app.get('/api/quizzes/:id',async(req,res)=>{
   if(!strictUuid(id))return res.status(400).json({error:'Invalid quiz link'});
   const quiz=await loadQuiz(id);
   if(!quiz)return res.status(404).json({error:'Quiz not found'});
-  const safe={...quiz,questions:quiz.questions.map(q=>quiz.type==='friendship'?{q:q.q,opts:q.opts}:{q:q.q,opts:q.opts})};
+  const safe={...quiz,questions:quiz.questions.map(q=>quiz.type==='friendship'?{q:q.q,opts:q.opts}:{q:q.q,opts:q.opts.map(option=>({text:option.text}))})};
   res.set('Cache-Control','no-store').json(safe);
  }catch(error){console.error('Quiz load failed:',error.message);res.status(503).json({error:'Quiz is temporarily unavailable'});}
 });
