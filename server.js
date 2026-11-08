@@ -26,7 +26,7 @@ function rateLimit({limit,windowMs}){
 }
 const strictUuid=id=>typeof id==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
 
-app.use(express.json({limit:'20kb'}));
+app.use(express.json({limit:'64kb'}));
 async function loadQuiz(id){
  const result=await list({prefix:'quizzes/'+id+'.json',limit:1});
  const blob=result.blobs.find(item=>item.pathname==='quizzes/'+id+'.json');
