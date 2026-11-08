@@ -49,6 +49,7 @@ app.post('/api/quizzes',rateLimit({limit:20,windowMs:60*60*1000}),async(req,res)
    for(const q of quiz.questions)if(typeof q.q!=='string'||!q.q.trim()||q.q.length>140||!Array.isArray(q.opts)||q.opts.length!==4||q.opts.some(x=>typeof x!=='string'||!x.trim()||x.length>80)||!Number.isInteger(q.a)||q.a<0||q.a>3)return res.status(400).json({error:'Complete every question and choose its correct answer'});
   }else{
    if(!Array.isArray(quiz.outcomes)||quiz.outcomes.length<2||quiz.outcomes.length>8||quiz.outcomes.some(x=>typeof x!=='string'||!x.trim()||x.length>40)||new Set(quiz.outcomes.map(x=>x.toLowerCase())).size!==quiz.outcomes.length)return res.status(400).json({error:'Invalid personality outcomes'});
+   if(quiz.outcomeProfiles!==undefined&&(!Array.isArray(quiz.outcomeProfiles)||quiz.outcomeProfiles.length!==quiz.outcomes.length||quiz.outcomeProfiles.some(p=>!p||['real','strengths','social','hidden','takeaway'].some(k=>typeof p[k]!=='string'||!p[k].trim()||p[k].length>500))))return res.status(400).json({error:'Invalid personality result descriptions'});
    for(const q of quiz.questions)if(typeof q.q!=='string'||!q.q.trim()||q.q.length>140||!Array.isArray(q.opts)||q.opts.length!==4||q.opts.some(x=>!x||typeof x.text!=='string'||!x.text.trim()||x.text.length>100||!Number.isInteger(x.out)||x.out<0||x.out>=quiz.outcomes.length))return res.status(400).json({error:'Complete every question and assign each answer to a result'});
   }
   const id=crypto.randomUUID();
