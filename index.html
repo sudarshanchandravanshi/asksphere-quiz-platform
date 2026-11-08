@@ -18,7 +18,7 @@
 
 <div class="modal" id="templates"><div class="panel"><div class="panelhead"><div><span class="eyebrow">READY-MADE QUIZZES</span><h2 style="margin:8px 0 0">Pick a starter template</h2></div><button class="close" data-close>✕</button></div><p class="muted">Every starter has 15 questions. Choose one, then edit, remove, or add questions before sharing.</p><div id="templateChoices" class="cards" style="grid-template-columns:1fr 1fr"></div></div></div>
 <div class="modal" id="player"><div class="panel"><div class="panelhead"><div><span class="eyebrow">ASKSPHERE QUIZ</span><h2 id="playTitle" style="margin:8px 0 0">Quiz</h2></div><button class="close" data-close>✕</button></div><div id="playBody"></div></div></div>
-<div class="modal" id="share"><div class="panel"><div class="panelhead"><h2>Your quiz is ready! 🎉</h2><button class="close" data-close>✕</button></div><p class="muted">Send this link to your friends and challenge them.</p><label class="field"><span>Shareable link</span><input id="shareUrl" readonly></label><button class="btn" id="copyLink">Copy link ↗</button><div class="result"><b>Heads up</b><p class="notice">Your quiz questions are carried in the share link. If a player chooses the public leaderboard opt-in, their nickname and score are saved for this quiz. Individual answers are not displayed on the leaderboard.</p></div></div></div>
+<div class="modal" id="share"><div class="panel"><div class="panelhead"><h2>Your quiz is ready! 🎉</h2><button class="close" data-close>✕</button></div><p class="muted">Send this link to your friends and challenge them.</p><label class="field"><span>Shareable link</span><input id="shareUrl" readonly></label><button class="btn" id="copyLink">Copy link ↗</button><div class="result"><b>Heads up</b><p class="notice">Quiz questions are shared securely. Correct friendship answers stay on the server and are never included in the player link. If a player opts in, their nickname and score appear on the public leaderboard.</p></div></div></div>
 <script>
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];let mode='friendship',fCount=0,pCount=0;
 const questionBank=[
@@ -89,45 +89,56 @@ function builder(m='friendship'){renderQuestionLibrary();renderPersonLibrary();s
 $('#navCreate').onclick=$('#heroCreate').onclick=()=>builder();$$('.startType').forEach(b=>b.onclick=()=>builder(b.dataset.type));$('#addFriend').onclick=friendRow;$('#addSelectedLibrary').onclick=addLibraryQuestions;$('#selectAllLibrary').onclick=()=>{$('#questionLibrary input').forEach(x=>x.checked=true)};$('#addPerson').onclick=personRow;$('#addSelectedPersonLibrary').onclick=addPersonLibrary;$('#selectAllPersonLibrary').onclick=()=>{$('#personQuestionLibrary input').forEach(x=>x.checked=true)};$$('.tab').forEach(b=>b.onclick=()=>setMode(b.dataset.tab));$('#exploreBtn').onclick=()=>$('#explore').scrollIntoView({behavior:'smooth'});
 function encode(obj){return btoa(unescape(encodeURIComponent(JSON.stringify(obj)))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function decode(s){return JSON.parse(decodeURIComponent(escape(atob(s.replace(/-/g,'+').replace(/_/g,'/')))))}
-function createQuiz(){
+async function createQuiz(){
  const quiz={type:mode,title:$('#quizTitle').value.trim(),creator:$('#creator').value.trim()||'A friend',questions:[]};
  if(!quiz.title)return alert('Please add a quiz title.');
  if(mode==='friendship'){
   const rows=$$('#friendQuestions .tile');
-  if(!rows.length)return alert('Add at least one question.');
-  if(rows.length>50)return alert('A quiz can have up to 50 questions.');
-  for(let i=0;i<rows.length;i++){
-   const el=rows[i],q=el.querySelector('.fq').value.trim(),opts=[...el.querySelectorAll('.fo')].map(x=>x.value.trim()),a=Number(el.querySelector('.fa').value);
-   if(!q||opts.length!==4||opts.some(x=>!x)||!Number.isInteger(a)||a<0||a>3)return alert('Please complete question '+(i+1)+', fill all four answer choices, and select its correct answer. Nothing has been removed.');
-   quiz.questions.push({q,opts,a});
-  }
+  if(!rows.length||rows.length>50)return alert('Add between 1 and 50 questions.');
+  for(let i=0;i<rows.length;i++){const el=rows[i],q=el.querySelector('.fq').value.trim(),opts=[...el.querySelectorAll('.fo')].map(x=>x.value.trim()),a=Number(el.querySelector('.fa').value);if(!q||opts.length!==4||opts.some(x=>!x)||!Number.isInteger(a)||a<0||a>3)return alert('Complete question '+(i+1)+', fill all four choices, and select its correct answer.');quiz.questions.push({q,opts,a});}
  }else{
   const outcomes=outcomeNames(),rows=$$('#personQuestions .tile');
-  if(outcomes.length<2)return alert('Add at least two personality result names.');
-  if(new Set(outcomes.map(x=>x.toLowerCase())).size!==outcomes.length)return alert('Personality result names must be unique.');
-  if(!rows.length)return alert('Add at least one question.');
-  if(rows.length>50)return alert('A quiz can have up to 50 questions.');
-  for(let i=0;i<rows.length;i++){
-   const el=rows[i],q=el.querySelector('.pq').value.trim(),texts=[...el.querySelectorAll('.po')].map(x=>x.value.trim()),selects=[...el.querySelectorAll('.pm')];
-   if(!q||texts.length!==4||texts.some(x=>!x)||selects.length!==4)return alert('Please complete question '+(i+1)+' and all four answer choices.');
-   const opts=texts.map((text,j)=>({text,out:Number(selects[j].value)}));
-   if(opts.some(x=>!Number.isInteger(x.out)||x.out<0||x.out>=outcomes.length))return alert('Please assign every answer in question '+(i+1)+' to a valid result type.');
-   quiz.questions.push({q,opts});
-  }
+  if(outcomes.length<2||new Set(outcomes.map(x=>x.toLowerCase())).size!==outcomes.length)return alert('Add at least two unique personality result names.');
+  if(!rows.length||rows.length>50)return alert('Add between 1 and 50 questions.');
+  for(let i=0;i<rows.length;i++){const el=rows[i],q=el.querySelector('.pq').value.trim(),texts=[...el.querySelectorAll('.po')].map(x=>x.value.trim()),selects=[...el.querySelectorAll('.pm')];if(!q||texts.length!==4||texts.some(x=>!x)||selects.length!==4)return alert('Complete question '+(i+1)+' and all four answer choices.');const opts=texts.map((text,j)=>({text,out:Number(selects[j].value)}));if(opts.some(x=>!Number.isInteger(x.out)||x.out<0||x.out>=outcomes.length))return alert('Assign every answer in question '+(i+1)+' to a valid result.');quiz.questions.push({q,opts});}
   quiz.outcomes=outcomes;
  }
- const url=location.origin+location.pathname+'?quiz='+encode(quiz);
- $('#shareUrl').value=url;closeAll();open('share');
+ if(quiz.type==='personality'){const url=location.origin+location.pathname+'?quiz='+encode(quiz);$('#shareUrl').value=url;closeAll();open('share');return;}
+ const button=$('#makeLink');button.disabled=true;button.textContent='Creating…';
+ try{const response=await fetch('/api/quizzes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(quiz)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not create quiz');$('#shareUrl').value=location.origin+location.pathname+'?id='+encodeURIComponent(data.quizId);closeAll();open('share');}
+ catch(error){alert(error.message||'Could not create share link. Please try again.');}
+ finally{button.disabled=false;button.textContent='Create share link →';}
 }
 $('#makeLink').onclick=createQuiz;$('#copyLink').onclick=async()=>{try{await navigator.clipboard.writeText($('#shareUrl').value);$('#copyLink').textContent='Copied! ✓'}catch(e){$('#shareUrl').select();document.execCommand('copy');$('#copyLink').textContent='Copied! ✓'}};
-function play(quiz){$('#playTitle').textContent=quiz.title;let body=$('#playBody');body.innerHTML='';let form=document.createElement('form');form.innerHTML='<label class="field"><span>Your name for the leaderboard</span><input id="playerName" maxlength="35" placeholder="Enter a nickname"></label><label class="notice" style="display:block;margin:10px 0"><input id="shareScore" type="checkbox"> I agree to share this nickname and score publicly on this quiz leaderboard.</label>';quiz.questions.forEach((q,i)=>{let block=document.createElement('div');block.className='quizquestion';block.innerHTML='<b>'+(i+1)+'. '+esc(q.q)+'</b>'+ (quiz.type==='friendship'?q.opts.map((o,j)=>'<label><input type="radio" name="q'+i+'" value="'+j+'" required>'+esc(o)+'</label>').join(''):q.opts.map((o,j)=>'<label><input type="radio" name="q'+i+'" value="'+j+'" required>'+esc(o.text)+'</label>').join(''));form.append(block)});let submit=document.createElement('button');submit.className='btn';submit.textContent='Reveal my result →';form.append(submit);form.onsubmit=async e=>{e.preventDefault();let answers=quiz.questions.map((q,i)=>+form.querySelector('input[name="q'+i+'"]:checked').value);const opted=!!form.querySelector('#shareScore')?.checked,nickname=(form.querySelector('#playerName')?.value||'').trim();let result;if(quiz.type==='friendship'){let score=answers.reduce((n,a,i)=>n+(a===quiz.questions[i].a?1:0),0),pct=Math.round(score/quiz.questions.length*100),player=(form.querySelector('#playerName')?.value||'Friend').trim();result='<div class="result"><span class="eyebrow">YOUR FINAL SCORE</span><h2>'+score+' / '+quiz.questions.length+' correct 🎉</h2><h3>'+pct+'% · '+esc(player)+'</h3><p>'+ (score===quiz.questions.length?'You know '+esc(quiz.creator)+' inside out!':score>=quiz.questions.length/2?'You know them pretty well!':'Time for another catch-up!')+'</p></div><section class="tile"><h3>🏆 Shared quiz leaderboard</h3><p id="leaderboardStatus" class="notice">Loading scores…</p><ol id="leaderboardList"></ol></section>'}else{let counts=quiz.outcomes.map(()=>0);answers.forEach((a,i)=>{let ix=quiz.questions[i].opts[a].out;if(counts[ix]!==undefined)counts[ix]++});let win=counts.indexOf(Math.max(...counts));result='<div class="result"><h2>Your vibe: '+esc(quiz.outcomes[win]||'One of a kind')+' ✨</h2><p>Your answers make this your top personality match.</p></div>'}body.innerHTML=result+'<button class="btn" onclick="location.href=location.pathname">Make your own quiz ↗</button>';
-if(quiz.type==='friendship'){
- const quizId=await getQuizId(quiz);
- if(opted&&nickname){try{const saved=await fetch('/api/scores',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quizId,name:nickname,score,total:quiz.questions.length})});if(!saved.ok)throw new Error('save failed');}catch{const s=body.querySelector('#leaderboardStatus');if(s)s.textContent='Could not submit your score. Please try again later.';}}
- try{const response=await fetch('/api/leaderboard?quizId='+quizId);if(!response.ok)throw new Error('load failed');const data=await response.json();const list=body.querySelector('#leaderboardList'),status=body.querySelector('#leaderboardStatus');if(data.entries.length){list.innerHTML=data.entries.map(entry=>'<li>'+esc(entry.name)+' — '+entry.score+'/'+entry.total+' ('+entry.percent+'%)</li>').join('');status.textContent='Top scores for this quiz link';}else{status.textContent='No shared scores yet. Be the first to opt in!';}}catch{const s=body.querySelector('#leaderboardStatus');if(s)s.textContent='Leaderboard is temporarily unavailable.';}
- }};body.prepend(form);open('player')}
+function play(quiz,serverQuizId=null){
+ $('#playTitle').textContent=quiz.title;const body=$('#playBody');body.innerHTML='';const form=document.createElement('form');
+ form.innerHTML='<label class="field"><span>Your nickname (optional)</span><input id="playerName" maxlength="35" placeholder="Enter a nickname"></label><label class="notice" style="display:block;margin:10px 0"><input id="shareScore" type="checkbox"> I agree to share this nickname and score publicly on this quiz leaderboard.</label>';
+ quiz.questions.forEach((q,i)=>{const block=document.createElement('div');block.className='quizquestion';block.innerHTML='<b>'+(i+1)+'. '+esc(q.q)+'</b>'+ (quiz.type==='friendship'?q.opts.map((o,j)=>'<label><input type="radio" name="q'+i+'" value="'+j+'" required>'+esc(o)+'</label>').join(''):q.opts.map((o,j)=>'<label><input type="radio" name="q'+i+'" value="'+j+'" required>'+esc(o.text)+'</label>').join(''));form.append(block)});
+ const submit=document.createElement('button');submit.className='btn';submit.textContent='Reveal my result →';form.append(submit);
+ form.onsubmit=async e=>{
+  e.preventDefault();const answers=quiz.questions.map((q,i)=>Number(form.querySelector('input[name="q'+i+'"]:checked').value));
+  const nickname=(form.querySelector('#playerName').value||'').trim(),opted=form.querySelector('#shareScore').checked;
+  submit.disabled=true;submit.textContent='Calculating…';
+  try{
+   let result;
+   if(serverQuizId){const response=await fetch('/api/quiz-result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({quizId:serverQuizId,answers,name:nickname,shareScore:opted})});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not calculate result');result=data;}
+   else if(quiz.type==='friendship'){const score=answers.reduce((n,a,i)=>n+(a===quiz.questions[i].a?1:0),0);result={score,total:quiz.questions.length,percent:Math.round(score/quiz.questions.length*100)};}
+   else{const counts=quiz.outcomes.map(()=>0);answers.forEach((a,i)=>{const ix=quiz.questions[i].opts[a].out;if(counts[ix]!==undefined)counts[ix]++;});result={outcome:quiz.outcomes[counts.indexOf(Math.max(...counts))]||'One of a kind'};}
+   let markup='';
+   if(quiz.type==='friendship'){
+    markup='<div class="result"><span class="eyebrow">YOUR FINAL SCORE</span><h2>'+result.score+' / '+result.total+' correct 🎉</h2><h3>'+result.percent+'% · '+esc(nickname||'Friend')+'</h3><p>'+(result.score===result.total?'You know '+esc(quiz.creator)+' inside out!':result.score>=result.total/2?'You know them pretty well!':'Time for another catch-up!')+'</p></div><section class="tile"><h3>🏆 Shared quiz leaderboard</h3><p id="leaderboardStatus" class="notice">Loading scores…</p><ol id="leaderboardList"></ol></section>';
+   }else markup='<div class="result"><h2>Your vibe: '+esc(result.outcome)+' ✨</h2><p>Your answers make this your top personality match.</p></div>';
+   body.innerHTML=markup+'<button class="btn" onclick="location.href=location.pathname">Make your own quiz ↗</button>';
+   if(quiz.type==='friendship'&&serverQuizId){
+    try{const response=await fetch('/api/leaderboard?quizId='+encodeURIComponent(serverQuizId));if(!response.ok)throw new Error();const data=await response.json(),list=body.querySelector('#leaderboardList'),status=body.querySelector('#leaderboardStatus');if(data.entries.length){list.innerHTML=data.entries.map(entry=>'<li>'+esc(entry.name)+' — '+entry.score+'/'+entry.total+' ('+entry.percent+'%)</li>').join('');status.textContent='Top scores for this quiz';}else status.textContent='No shared scores yet. Be the first to opt in!';}
+    catch{const status=body.querySelector('#leaderboardStatus');if(status)status.textContent='Leaderboard is temporarily unavailable.';}
+   }
+  }catch(error){alert(error.message||'Could not calculate your result. Please try again.');submit.disabled=false;submit.textContent='Reveal my result →';}
+ };
+ body.append(form);open('player');
+}
 async function getQuizId(quiz){const bytes=new TextEncoder().encode(JSON.stringify(quiz));const digest=await crypto.subtle.digest('SHA-256',bytes);return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('')}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 $('#sampleBtn').onclick=openTemplates;
-$('#year').textContent=new Date().getFullYear();const params=new URLSearchParams(location.search);if(params.has('quiz')){try{let q=decode(params.get('quiz'));if(['friendship','personality'].includes(q.type)&&Array.isArray(q.questions)&&q.questions.length)play(q)}catch(e){alert('This quiz link looks invalid or incomplete.')}} 
+$('#year').textContent=new Date().getFullYear();const params=new URLSearchParams(location.search);if(params.has('id')){fetch('/api/quizzes/'+encodeURIComponent(params.get('id'))).then(r=>{if(!r.ok)throw new Error();return r.json()}).then(q=>{if(['friendship','personality'].includes(q.type)&&Array.isArray(q.questions)&&q.questions.length)play(q,params.get('id'));else throw new Error()}).catch(()=>alert('This quiz link is invalid or no longer available.'));}else if(params.has('quiz')){try{let q=decode(params.get('quiz'));if(['friendship','personality'].includes(q.type)&&Array.isArray(q.questions)&&q.questions.length)play(q)}catch(e){alert('This quiz link looks invalid or incomplete.')}} 
 </script></body></html>
