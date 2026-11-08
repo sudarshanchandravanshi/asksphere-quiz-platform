@@ -1,6 +1,6 @@
 # AskSphere
 
-A responsive friendship and personality quiz builder.
+A responsive quiz platform for customizable friendship and personality quizzes.
 
 ## Run locally
 
@@ -9,17 +9,32 @@ npm install
 npm start
 ```
 
-## Current MVP behavior
+## Current features
 
-- Create friendship quizzes with keyed answers and score results.
-- Create personality quizzes with custom result types.
-- Share quiz definitions using a URL-encoded payload.
-- Play sample quiz, responsive landing page, legal-page starter templates, and reserved ad slots.
+- Create friendship quizzes with four answer choices and server-side answer keys.
+- Create personality quizzes with 2–8 custom outcomes and answer-to-outcome mapping.
+- Save both quiz types in Vercel Blob and share them using UUID-based links.
+- Calculate quiz results server-side for new quiz links.
+- Optional public friendship leaderboard; nickname and score are stored only after explicit player opt-in.
+- 15 built-in friendship questions, 15 personality prompts, and 11 starter templates.
+- Responsive landing page, FAQ, About page, privacy, terms, contact, sitemap and robots file.
 
-## Production work still required
+## Environment and deployment
 
-This is a frontend MVP. Shared quiz payloads travel in the URL; responses are calculated in the visitor's browser and are not collected into a cross-device leaderboard. Before public monetization, connect a database and authentication, add abuse reporting/rate limits, configure a real support contact and privacy disclosures, and add the approved AdSense publisher/client + ad unit IDs only after Google approval. Never encourage invalid ad clicks or show ads on thin/empty content pages.
+- Node.js and Express.
+- Vercel Blob is required for quiz and leaderboard storage.
+- On Vercel, connect a Blob store to the project and verify the server-side Blob token is available.
+- Health endpoint: `/health`.
 
-## Deployment
+## Security and operational notes
 
-Node/Express static host. Health endpoint: `/health`.
+- API validation, request body size limits, basic per-instance in-memory rate limiting, and baseline security headers are enabled.
+- The in-memory rate limiter is not shared across serverless instances. Use a distributed rate-limit store before high-traffic public launch.
+- There is no account system, quiz owner dashboard, or self-service deletion flow.
+- Older friendship links created before server-side answer storage may expose correct answers in their URL payload. Recreate these quizzes before sharing again.
+- Personality and friendship quiz data is stored in Vercel Blob. Public quiz links should be treated as shareable.
+- A monitored support email, deletion workflow, regional privacy/legal review, and abuse-report process must be configured before broad public launch.
+
+## AdSense preparation
+
+Ad slots are placeholders only. No AdSense publisher ID, ad-unit IDs, ad scripts, or consent-management platform have been configured. Apply only after the site has substantial original useful content, accurate policy disclosures, a working support contact, and the required consent setup for the regions served. Never encourage ad clicks or place ads where they can be confused with quiz controls.
