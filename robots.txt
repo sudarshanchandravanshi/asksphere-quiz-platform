@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Sitemap: https://asksphere-quiz-platform.vercel.app/sitemap.xml
