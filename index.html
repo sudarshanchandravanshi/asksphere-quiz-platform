@@ -106,7 +106,7 @@ async function createQuiz(){
  }
  
  const button=$('#makeLink');button.disabled=true;button.textContent='Creating…';
- try{const response=await fetch('/api/quizzes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(quiz)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not create quiz');$('#shareUrl').value=location.origin+location.pathname+'?id='+encodeURIComponent(data.quizId);closeAll();open('share');}
+ try{const response=await fetch('/api/quizzes',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(quiz)});const data=await response.json();if(!response.ok)throw new Error(data.error||'Could not create quiz');$('#shareUrl').value=location.origin+location.pathname+'?id='+encodeURIComponent(data.quizId);$('#friendQuestions').innerHTML='';$('#personQuestions').innerHTML='';fCount=0;pCount=0;$('#quizTitle').value='';$('#creator').value='';$('#outcomes').value='The Dreamer,The Explorer,The Creative,The Connector';closeAll();open('share');}
  catch(error){alert(error.message||'Could not create share link. Please try again.');}
  finally{button.disabled=false;button.textContent='Create share link →';}
 }
