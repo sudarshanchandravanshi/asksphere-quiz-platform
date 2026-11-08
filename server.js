@@ -75,10 +75,10 @@ app.post('/api/quiz-result',rateLimit({limit:60,windowMs:60*60*1000}),async(req,
   let result;
   if(quiz.type==='friendship'){
    const score=answers.reduce((sum,a,i)=>sum+(a===quiz.questions[i].a?1:0),0);
-   result={score,total:quiz.questions.length,percent:Math.round(score/quiz.questions.length*100)};
+   result={score,total:quiz.questions.length,percent:Math.round(score/quiz.questions.length*100),review:quiz.questions.map((question,i)=>({question:question.q,options:question.opts,selected:answers[i],correct:question.a,isCorrect:answers[i]===question.a}))};
    if(shareScore===true){
     if(typeof name!=='string'||!name.trim()||name.trim().length>35)return res.status(400).json({error:'Enter a nickname to share your score'});
-    const entry={name:name.trim().replace(/[<>]/g,''),...result,createdAt:new Date().toISOString()};
+    const entry={name:name.trim().replace(/[<>]/g,''),score:result.score,total:result.total,percent:result.percent,createdAt:new Date().toISOString()};
     await put('scores/'+quizId+'/'+crypto.randomUUID()+'.json',JSON.stringify(entry),{access:'public',addRandomSuffix:false,contentType:'application/json'});
    }
   }else{
