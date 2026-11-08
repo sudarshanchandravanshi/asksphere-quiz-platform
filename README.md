@@ -37,4 +37,4 @@ npm start
 
 ## AdSense preparation
 
-Ad slots are placeholders only. No AdSense publisher ID, ad-unit IDs, ad scripts, or consent-management platform have been configured. Apply only after the site has substantial original useful content, accurate policy disclosures, a working support contact, and the required consent setup for the regions served. Never encourage ad clicks or place ads where they can be confused with quiz controls.
+Ad slots are placeholders only. The AdSense publisher verification script and ads.txt seller record are configured for publisher ID pub-2264953470106322. Ad-unit IDs and consent-management configuration are not yet set up, and Google approval is not confirmed. Apply only after the site has substantial original useful content, accurate policy disclosures, a working support contact, and the required consent setup for the regions served. Never encourage ad clicks or place ads where they can be confused with quiz controls.
