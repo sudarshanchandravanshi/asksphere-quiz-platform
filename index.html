@@ -119,6 +119,7 @@ function play(quiz,serverQuizId=null){
  form.onsubmit=async e=>{
   e.preventDefault();const answers=quiz.questions.map((q,i)=>Number(form.querySelector('input[name="q'+i+'"]:checked').value));
   const nickname=(form.querySelector('#playerName').value||'').trim(),opted=form.querySelector('#shareScore').checked;
+  if(opted&&!nickname){alert('Add a nickname before sharing your score publicly.');return;}
   submit.disabled=true;submit.textContent='Calculating…';
   try{
    let result;
