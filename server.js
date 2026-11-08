@@ -61,15 +61,6 @@ app.post('/api/quiz-result',async(req,res)=>{
   res.set('Cache-Control','no-store').json(result);
  }catch(error){console.error('Quiz result failed:',error.message);res.status(503).json({error:'Could not calculate your result. Please try again.'});}
 });
-app.post('/api/scores',async(req,res)=>{
- try{
-  const {quizId,name,score,total}=req.body||{};
-  if(typeof quizId!=='string'||! /^[a-f0-9]{64}$/.test(quizId)||typeof name!=='string'||!name.trim()||name.trim().length>35||!Number.isInteger(score)||!Number.isInteger(total)||total<1||total>50||score<0||score>total)return res.status(400).json({error:'Invalid score submission'});
-  const entry={name:name.trim().replace(/[<>]/g,''),score,total,percent:Math.round(score/total*100),createdAt:new Date().toISOString()};
-  const blob=await put('scores/'+quizId+'/'+crypto.randomUUID()+'.json',JSON.stringify(entry),{access:'public',addRandomSuffix:false,contentType:'application/json'});
-  res.status(201).json({ok:true,id:blob.pathname});
- }catch(error){console.error('Score save failed:',error.message);res.status(503).json({error:'Scores are temporarily unavailable'});}
-});
 app.get('/api/leaderboard',async(req,res)=>{
  try{
   const quizId=String(req.query.quizId||'');
